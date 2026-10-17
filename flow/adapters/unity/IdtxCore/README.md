@@ -5,26 +5,28 @@ for the idtx-flow avatar pipeline. Targets **Unity 2022.3 LTS** (the
 new `com.unity.importer.usd` packages require Unity 2023.1+; this
 package is what to use when you're locked to 2022.3).
 
-## Install (Unity Package Manager)
+## Install (repo manifest)
 
-1. Copy `flow/adapters/unity/IdtxCore/` from this repo into your Unity project as
-   `Packages/com.vsekai.idtxcore/`, or add it via Package Manager's
-   "Add package from disk" pointing at the `flow/adapters/unity/IdtxCore/package.json`.
-2. Copy `addons/IDTXFlow/bin/windows/libidtx_core.windows.x86_64.dll`
-   (and the USD runtime DLLs it depends on — see below) into
-   `Assets/Plugins/x86_64/`.
-3. In Unity's PluginImporter inspector for `libidtx_core...dll`,
-   strip the `lib` prefix and platform/arch suffix so the runtime
-   filename Unity sees is `idtx_core.dll`. This matches the
-   `DllName = "idtx_core"` constant in `IdtxCoreNative.cs`.
+The native plugins live in `V-Sekai-fire/repository-idtxcore-unity-natives`. A repo
+manifest checks that repository out as this package's `Plugins/x86_64` folder, which
+this repository ignores:
 
-Runtime dependencies (must be alongside `idtx_core.dll`):
+```xml
+<remote name="v-sekai-fire" fetch="https://github.com/V-Sekai-fire" />
+<project name="interactor-flow" path="interactor-flow" remote="v-sekai-fire" />
+<project name="repository-idtxcore-unity-natives" remote="v-sekai-fire"
+         path="interactor-flow/flow/adapters/unity/IdtxCore/Plugins/x86_64" />
+```
 
-| File | Source |
-|---|---|
-| `usd_ms.dll`     | thirdparty/openusd-25.11/lib/usd_ms.dll      |
-| `tbb12.dll`      | thirdparty/openusd-25.11/bin/tbb12.dll       |
-| `libidtx_usd.dll`| flow/core/usd/libs/windows/libidtx_usd.dll             |
+The Unity project then names the package by a path relative to its `Packages/` folder:
+
+```json
+"com.vsekai.idtxcore": "file:../../interactor-flow/flow/adapters/unity/IdtxCore"
+```
+
+`pixi run unity` builds the same files into `Plugins/x86_64`: `idtx_core.dll`,
+`libidtx_usd.dll`, `usd_ms.dll` (OpenUSD), `tbb12.dll` and the `usd~` OpenUSD plugin
+registry. The natives repository records which CI run its copies came from.
 
 ## Use
 
