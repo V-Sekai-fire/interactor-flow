@@ -107,3 +107,7 @@ idtx-build.log
 flow/adapters/unity/IdtxCore/Plugins/*/usd~/
 compile_commands.json
 __pycache__/
+
+# The IdtxCore native plugins: repository-idtxcore-unity-natives, checked out here by a
+# repo manifest, or `pixi run unity` output.
+flow/adapters/unity/IdtxCore/Plugins/x86_64/
