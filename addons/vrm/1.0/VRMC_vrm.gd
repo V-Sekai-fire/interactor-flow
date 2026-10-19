@@ -1,3 +1,4 @@
+@tool
 extends GLTFDocumentExtension
 
 const vrm_constants_class = preload("../vrm_constants.gd")
@@ -94,7 +95,6 @@ static func _validate_meta(vrm_meta: vrm_meta_class) -> PackedStringArray:
 
 func _export_meta(vrm_meta: vrm_meta_class, vrm_extension: Dictionary, gstate: GLTFState):
 	var meta_obj: Dictionary = {}
-	meta_obj["specVersion"] = vrm_meta.spec_version
 	meta_obj["name"] = vrm_meta.title
 	meta_obj["version"] = vrm_meta.version
 	meta_obj["authors"] = Array(vrm_meta.authors)
@@ -114,10 +114,15 @@ func _export_meta(vrm_meta: vrm_meta_class, vrm_extension: Dictionary, gstate: G
 	meta_obj["creditNotation"] = credit_notation_map_rev[vrm_meta.credit_notation]
 	meta_obj["allowRedistribution"] = vrm_meta.allow_redistribution == "Allow"
 	meta_obj["modification"] = modification_map_rev[vrm_meta.modification]
-	meta_obj["licenseName"] = vrm_meta.license_name
 	meta_obj["licenseUrl"] = vrm_meta.license_url
 	meta_obj["thirdPartyLicenses"] = vrm_meta.third_party_licenses
 	meta_obj["otherLicenseUrl"] = vrm_meta.other_license_url
+	# The VRM 1.0 meta schema has no specVersion or licenseName (VRM 0.x fields), gives its lists
+	# minItems 1, and leaves optional fields out when unset. VRoid Hub refuses a meta with extra
+	# keys or empty values ("model file is not included in the list").
+	for k in meta_obj.keys():
+		if (meta_obj[k] is String or meta_obj[k] is Array) and meta_obj[k].is_empty():
+			meta_obj.erase(k)
 	vrm_extension["meta"] = meta_obj
 
 
@@ -192,7 +197,7 @@ func _create_animation(default_values: Dictionary, default_blend_shapes: Diction
 				if smat.next_pass != null:
 					property_path2 = "next_pass:" + property_path1
 			else:
-				printerr("Unknown type for tex transform parameter" + " surface " + node.name + "/" + str(surface_idx))
+				push_error("Unknown type for tex transform parameter" + " surface " + node.name + "/" + str(surface_idx))
 		elif mat is BaseMaterial3D:
 			var smat: BaseMaterial3D = mat
 			property_path1 = "uv1_offset"
@@ -247,7 +252,7 @@ func _create_animation(default_values: Dictionary, default_blend_shapes: Diction
 				if matbind["type"] == "outlineColor":
 					property_path = "next_pass:" + property_path
 			else:
-				printerr("Unknown type for parameter " + matbind["type"] + " surface " + node.name + "/" + str(surface_idx))
+				push_error("Unknown type for parameter " + matbind["type"] + " surface " + node.name + "/" + str(surface_idx))
 		elif mat is BaseMaterial3D:
 			var smat: BaseMaterial3D = mat
 			if matbind["type"] == "color":
@@ -277,7 +282,7 @@ func _create_animation(default_values: Dictionary, default_blend_shapes: Diction
 		var nodeMesh: ImporterMesh = node.mesh
 
 		if nodeMesh == null || bind["index"] < 0 || bind["index"] >= nodeMesh.get_blend_shape_count():
-			printerr("Invalid blend shape index in bind " + str(expression) + " for mesh " + str(node.name))
+			push_error("Invalid blend shape index in bind " + str(expression) + " for mesh " + str(node.name))
 			continue
 		var animtrack: int = anim.add_track(Animation.TYPE_BLEND_SHAPE)
 		# nodeMesh.set_blend_shape_name(int(bind["index"]), shape["name"] + "_" + str(bind["index"]))
